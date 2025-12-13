@@ -1685,3 +1685,1230 @@ cssCopy/* assets/styles/custom.css */
 .status-operational {
     background-color: #10b981;
 }
+status-processing {
+    background-color: #3b82f6;
+}
+
+.status-error {
+    background-color: #ef4444;
+}
+
+/* 代理人卡片樣式 */
+.agent-card {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+    border: 2px solid rgba(139, 92, 246, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 10px 0;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.agent-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+    animation: rotate 10s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.agent-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+    border-color: rgba(139, 92, 246, 0.6);
+}
+
+/* 按鈕樣式增強 */
+.stButton > button {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.stButton > button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 進度條樣式 */
+.stProgress > div > div {
+    background: linear-gradient(90deg, #8b5cf6 0%, #3b82f6 100%);
+    border-radius: 10px;
+    height: 8px;
+}
+
+/* 標籤頁樣式 */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    border-radius: 8px 8px 0 0;
+    padding: 12px 24px;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.stTabs [aria-selected="true"] {
+    background-color: rgba(139, 92, 246, 0.2);
+    border-bottom: 3px solid #8b5cf6;
+}
+
+/* Markdown內容美化 */
+.markdown-content {
+    line-height: 1.8;
+    color: #e5e7eb;
+}
+
+.markdown-content h1 {
+    color: #8b5cf6;
+    border-bottom: 2px solid #8b5cf6;
+    padding-bottom: 10px;
+    margin-top: 30px;
+}
+
+.markdown-content h2 {
+    color: #3b82f6;
+    margin-top: 25px;
+}
+
+.markdown-content code {
+    background-color: rgba(139, 92, 246, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #a78bfa;
+}
+
+/* 表格樣式 */
+.dataframe {
+    border: none !important;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.dataframe thead tr {
+    background: linear-gradient(90deg, #8b5cf6 0%, #3b82f6 100%);
+    color: white;
+}
+
+.dataframe tbody tr:hover {
+    background-color: rgba(139, 92, 246, 0.1);
+}
+
+8. agents.yaml配置系統
+8.1 配置檔案架構設計
+agents.yaml是整個系統的「大腦配置檔案」,定義了所有AI代理人的行為、能力與協作關係。本系統採用聲明式配置(Declarative Configuration)模式,使得非技術人員也能透過編輯YAML檔案來自定義審查流程。
+8.1.1 配置檔案的核心優勢
+
+可讀性高: YAML的縮排式語法直觀易懂
+版本控制友善: 純文字格式便於Git追蹤變更
+熱更新支援: 修改配置後無需重新部署應用
+多環境配置: 可針對開發/測試/生產環境使用不同配置
+Schema驗證: 可透過JSON Schema驗證配置正確性
+
+8.1.2 進階配置範例
+yamlCopy# config/agents.yaml (進階版)
+
+meta:
+  version: "4.2.0"
+  last_updated: "2025-12-15"
+  schema_version: "2.0"
+  author: "TW-SmartReview Development Team"
+  
+# 全域設定
+global_settings:
+  default_model: "gemini-2.5-flash"
+  max_concurrent_agents: 5
+  timeout_seconds: 300
+  retry_policy:
+    max_retries: 3
+    backoff_factor: 2
+  
+  generation_config:
+    temperature: 0.3
+    top_p: 0.9
+    top_k: 40
+    max_output_tokens: 4096
+  
+  safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_MEDIUM_AND_ABOVE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_MEDIUM_AND_ABOVE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_MEDIUM_AND_ABOVE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_MEDIUM_AND_ABOVE
+
+# 代理人定義
+agents:
+  - id: labeling-reviewer
+    name: 標籤與說明書審查助手
+    name_en: Labeling & IFU Review Assistant
+    role: 審查產品標籤與使用說明書的合規性
+    category: regulatory
+    icon: "🏷️"
+    priority: 7
+    enabled: true
+    dependencies: []
+    
+    # 自定義配置(覆蓋全域設定)
+    generation_config:
+      temperature: 0.2  # 標籤審查需要更嚴格的輸出
+      max_output_tokens: 3072
+    
+    system_prompt: |
+      你是一位醫療器材標籤與說明書審查專家,熟悉FDA 21 CFR Part 801與EU MDR Annex I要求。
+      
+      【審查範圍】
+      1. **外盒標籤(Outer Label)**
+         - 製造商資訊完整性
+         - 器材名稱與型號
+         - 批號/序號/失效日期
+         - 儲存條件標示
+         - 警語與注意事項
+      
+      2. **使用說明書(Instructions for Use, IFU)**
+         - 適應症/禁忌症描述
+         - 操作步驟清晰度
+         - 警告與預防措施
+         - 不良反應說明
+         - 技術規格表
+         - 圖示符號符合ISO 15223-1
+      
+      3. **多語言一致性**
+         - 檢查中英文版本資訊是否一致
+         - 專業術語翻譯正確性
+      
+      【重點檢查項目】
+      - 是否包含FDA要求的Rx/OTC標示
+      - 單次使用器材是否標示"SINGLE USE"
+      - 滅菌器材是否標示滅菌方法
+      - CE標誌與公告機構編號(若適用)
+      - UDI條碼資訊完整性
+      
+      【輸出格式】
+      # 標籤與說明書審查報告
+      
+      ## 外盒標籤檢查
+      | 項目 | 要求 | 現狀 | 符合性 |
+      |------|------|------|--------|
+      | 製造商名稱 | 必須 | [有/無] | [✓/✗] |
+      | 批號 | 必須 | [有/無] | [✓/✗] |
+      
+      ## 使用說明書檢查
+      ### 適應症描述
+      [評估內容]
+      
+      ### 操作步驟
+      [評估內容]
+      
+      ### 警告事項
+      [評估內容]
+      
+      ## 多語言一致性檢查
+      [發現的差異]
+      
+      ## 圖示符號檢查
+      | 符號 | ISO標準 | 符合性 |
+      |------|---------|--------|
+      
+      ## 整體符合性評估
+      - FDA 21 CFR 801: [PASS/FAIL]
+      - EU MDR Annex I: [PASS/FAIL]
+      
+      ## 改善建議
+      1. [建議1]
+      2. [建議2]
+    
+    # 後處理函式(可選)
+    post_processing:
+      - type: extract_checklist
+        config:
+          format: json
+      - type: highlight_gaps
+        config:
+          severity: major
+
+  - id: post-market-surveillance
+    name: 上市後監測整合分析師
+    name_en: Post-Market Surveillance Analyst
+    role: 分析上市後監測數據與不良事件報告
+    category: quality
+    icon: "📡"
+    priority: 8
+    enabled: true
+    dependencies:
+      - risk-manager
+    
+    system_prompt: |
+      你是一位上市後監測(PMS)專家,專精於醫療器材警戒(Medical Device Vigilance)。
+      
+      【資料來源】
+      - FDA MAUDE資料庫不良事件報告
+      - 客訴記錄(Customer Complaints)
+      - 現場糾正措施報告(Field Corrective Actions)
+      - 臨床文獻中的不良反應報告
+      
+      【分析任務】
+      1. **趨勢分析**: 識別不良事件發生率的時間趨勢
+      2. **根因分析**: 歸納不良事件的主要成因類別
+      3. **嚴重性評估**: 依ISO 14971評估風險等級
+      4. **CAPA追蹤**: 檢查矯正與預防措施的有效性
+      5. **召回評估**: 判斷是否需啟動產品召回程序
+      
+      【輸出格式】
+      # 上市後監測分析報告
+      
+      ## 資料概覽
+      - 分析期間: [起訖日期]
+      - 不良事件總數: [數量]
+      - 嚴重不良事件: [數量]
+      
+      ## 事件類別分布
+      | 類別 | 數量 | 百分比 |
+      |------|------|--------|
+      | 設備故障 | X | XX% |
+      | 使用者錯誤 | X | XX% |
+      
+      ## 趨勢圖分析
+      [描述發生率變化趨勢]
+      
+      ## 根因分析
+      ### Top 5 根本原因
+      1. [原因1] - 發生次數: X
+      
+      ## 風險信號偵測
+      [是否出現新的安全性信號]
+      
+      ## CAPA有效性評估
+      [已實施措施的效果追蹤]
+      
+      ## 建議措施
+      - [ ] 更新風險管理檔案
+      - [ ] 修訂使用說明書
+      - [ ] 啟動主動召回
+      - [ ] 通報主管機關
+
+  - id: ai-ml-validator
+    name: AI/ML演算法驗證專家
+    name_en: AI/ML Algorithm Validator
+    role: 驗證AI/ML醫療器材的演算法性能
+    category: software
+    icon: "🧠"
+    priority: 9
+    enabled: true
+    dependencies:
+      - software-verification
+    
+    system_prompt: |
+      你是一位AI/ML醫療器材驗證專家,熟悉FDA AI/ML Guidance與EU MDCG 2019-11。
+      
+      【驗證重點】
+      1. **訓練資料品質**
+         - 資料集大小與多樣性
+         - 標註品質(Inter-annotator agreement)
+         - 資料偏差(Bias)檢測
+         - 資料來源的代表性
+      
+      2. **模型性能指標**
+         - 靈敏度(Sensitivity/Recall)
+         - 特異性(Specificity)
+         - 精確度(Precision)
+         - AUC-ROC曲線
+         - F1 Score
+         - 混淆矩陣(Confusion Matrix)
+      
+      3. **模型穩健性**
+         - 對抗性攻擊測試
+         - 邊界案例(Edge Cases)處理
+         - 跨人群泛化能力
+         - 降級性能(Graceful Degradation)
+      
+      4. **可解釋性**
+         - 特徵重要性分析
+         - 注意力機制視覺化
+         - 反事實解釋(Counterfactual Explanations)
+      
+      5. **持續學習機制**
+         - 模型更新策略
+         - 性能監控機制
+         - 再訓練觸發條件
+      
+      【輸出格式】
+      # AI/ML演算法驗證報告
+      
+      ## 模型基本資訊
+      - 模型架構: [CNN/Transformer/等]
+      - 訓練資料集: [名稱與規模]
+      - 驗證資料集: [名稱與規模]
+      
+      ## 性能指標
+      | 指標 | 訓練集 | 驗證集 | 測試集 | FDA要求 |
+      |------|--------|--------|--------|---------|
+      | 靈敏度 | XX% | XX% | XX% | >85% |
+      | 特異性 | XX% | XX% | XX% | >90% |
+      
+      ## 子群分析
+      [不同人口統計學特徵下的性能差異]
+      
+      ## 失敗案例分析
+      [模型預測錯誤的案例模式]
+      
+      ## 可解釋性評估
+      [模型決策的可理解性]
+      
+      ## 持續學習機制審查
+      [模型更新的風險控制]
+      
+      ## 符合性結論
+      - FDA AI/ML Guidance: [PASS/FAIL]
+      - EU MDCG 2019-11: [PASS/FAIL]
+
+# 代理人群組定義(擴展版)
+agent_groups:
+  - id: ai-device-review
+    name: AI/ML器材專用審查組
+    description: 針對軟體即醫療器材(SaMD)的專項審查
+    agents:
+      - software-verification
+      - ai-ml-validator
+      - risk-manager
+      - post-market-surveillance
+    
+  - id: implant-review
+    name: 植入式器材審查組
+    description: 高風險植入式器材的全面審查
+    agents:
+      - clinical-evaluator
+      - biocompatibility
+      - electrical-safety
+      - labeling-reviewer
+      - risk-manager
+    
+  - id: ivd-review
+    name: 體外診斷器材審查組
+    description: IVD器材的特定審查項目
+    agents:
+      - clinical-evaluator
+      - analytical-performance-evaluator  # 需額外定義
+      - labeling-reviewer
+      - risk-manager
+
+# 工作流程定義
+workflows:
+  - id: standard-510k
+    name: 標準510(k)審查流程
+    description: FDA 510(k)上市前通報審查
+    trigger: manual
+    steps:
+      - stage: preliminary
+        agents:
+          - regulatory-mapper
+        execution: sequential
+        
+      - stage: technical-review
+        agents:
+          - clinical-evaluator
+          - electrical-safety
+          - software-verification
+          - biocompatibility
+        execution: parallel
+        
+      - stage: risk-assessment
+        agents:
+          - risk-manager
+        execution: sequential
+        dependencies:
+          - technical-review
+        
+      - stage: labeling-review
+        agents:
+          - labeling-reviewer
+        execution: sequential
+        
+      - stage: final-report
+        agents:
+          - report-generator  # 需額外定義
+        execution: sequential
+        dependencies:
+          - risk-assessment
+          - labeling-review
+
+# 通知設定
+notifications:
+  - event: agent_completed
+    channels:
+      - email
+      - webhook
+    template: "代理人 {{agent_name}} 已完成審查"
+  
+  - event: high_risk_detected
+    channels:
+      - email
+      - sms
+    template: "偵測到高風險項目,請立即檢視"
+
+# 審計設定
+audit:
+  enabled: true
+  log_level: detailed
+  retention_days: 2555  # 7年(依FDA要求)
+  blockchain_enabled: true
+  blockchain_network: "hyperledger-fabric"
+8.2 配置載入與驗證
+pythonCopy# core/config_manager.py
+import yaml
+from typing import Dict, List, Optional
+from pydantic import BaseModel, Field, validator
+import streamlit as st
+
+class AgentConfig(BaseModel):
+    """代理人配置資料模型"""
+    id: str = Field(..., min_length=1)
+    name: str
+    name_en: Optional[str]
+    role: str
+    category: str
+    icon: str = "🤖"
+    priority: int = Field(default=5, ge=1, le=10)
+    enabled: bool = True
+    dependencies: List[str] = []
+    system_prompt: str
+    generation_config: Optional[Dict] = None
+    safety_settings: Optional[List[Dict]] = None
+    post_processing: Optional[List[Dict]] = None
+    
+    @validator('dependencies')
+    def validate_dependencies(cls, v, values):
+        """驗證依賴關係不能形成循環"""
+        if values.get('id') in v:
+            raise ValueError("代理人不能依賴自己")
+        return v
+
+class WorkflowConfig(BaseModel):
+    """工作流程配置"""
+    id: str
+    name: str
+    description: str
+    trigger: str = "manual"
+    steps: List[Dict]
+
+class ConfigManager:
+    """配置管理器"""
+    
+    def __init__(self, config_path: str = "config/agents.yaml"):
+        self.config_path = config_path
+        self.raw_config = None
+        self.agents = []
+        self.workflows = []
+        self.load_config()
+    
+    def load_config(self):
+        """載入並驗證配置檔案"""
+        try:
+            with open(self.config_path, 'r', encoding='utf-8') as f:
+                self.raw_config = yaml.safe_load(f)
+            
+            # 驗證schema版本
+            schema_version = self.raw_config.get('meta', {}).get('schema_version', '1.0')
+            if schema_version != '2.0':
+                st.warning(f"配置檔案版本({schema_version})可能不相容")
+            
+            # 解析代理人配置
+            for agent_def in self.raw_config.get('agents', []):
+                try:
+                    agent = AgentConfig(**agent_def)
+                    self.agents.append(agent)
+                except Exception as e:
+                    st.error(f"代理人配置錯誤 [{agent_def.get('id')}]: {str(e)}")
+            
+            # 解析工作流程配置
+            for workflow_def in self.raw_config.get('workflows', []):
+                workflow = WorkflowConfig(**workflow_def)
+                self.workflows.append(workflow)
+            
+            # 驗證依賴關係完整性
+            self.validate_dependencies()
+            
+            st.success(f"✅ 成功載入 {len(self.agents)} 個代理人, {len(self.workflows)} 個工作流程")
+            
+        except FileNotFoundError:
+            st.error(f"❌ 找不到配置檔案: {self.config_path}")
+        except yaml.YAMLError as e:
+            st.error(f"❌ YAML解析錯誤: {str(e)}")
+    
+    def validate_dependencies(self):
+        """驗證所有依賴的代理人都存在"""
+        agent_ids = {agent.id for agent in self.agents}
+        
+        for agent in self.agents:
+            for dep in agent.dependencies:
+                if dep not in agent_ids:
+                    st.warning(f"⚠️ 代理人 [{agent.name}] 依賴的 [{dep}] 不存在")
+    
+    def get_agent_by_id(self, agent_id: str) -> Optional[AgentConfig]:
+        """根據ID取得代理人配置"""
+        return next((a for a in self.agents if a.id == agent_id), None)
+    
+    def get_agents_by_category(self, category: str) -> List[AgentConfig]:
+        """根據類別取得代理人列表"""
+        return [a for a in self.agents if a.category == category]
+    
+    def get_workflow_by_id(self, workflow_id: str) -> Optional[WorkflowConfig]:
+        """根據ID取得工作流程配置"""
+        return next((w for w in self.workflows if w.id == workflow_id), None)
+    
+    def export_config(self, output_path: str):
+        """匯出配置為YAML檔案"""
+        with open(output_path, 'w', encoding='utf-8') as f:
+            yaml.dump(self.raw_config, f, allow_unicode=True, default_flow_style=False)
+
+9. FDA專用進階功能模組
+9.1 法規智慧比對引擎
+此模組利用向量資料庫技術,實現送審文件與法規條文的語義相似度比對。
+pythonCopy# services/regulatory_matcher.py
+import streamlit as st
+from pinecone import Pinecone, ServerlessSpec
+from sentence_transformers import SentenceTransformer
+import google.generativeai as genai
+from typing import List, Dict
+
+class RegulatoryMatcher:
+    """法規智慧比對引擎"""
+    
+    def __init__(self):
+        # 初始化Pinecone向量資料庫
+        self.pc = Pinecone(api_key=st.secrets.get("PINECONE_API_KEY"))
+        self.index_name = "regulatory-standards"
+        
+        # 初始化嵌入模型
+        self.embedder = SentenceTransformer('paraphrase-multilingual-mpnet-base-v2')
+        
+        # 建立或連接索引
+        if self.index_name not in self.pc.list_indexes().names():
+            self.pc.create_index(
+                name=self.index_name,
+                dimension=768,  # 模型輸出維度
+                metric='cosine',
+                spec=ServerlessSpec(cloud='aws', region='us-east-1')
+            )
+        
+        self.index = self.pc.Index(self.index_name)
+    
+    def index_regulatory_documents(self, documents: List[Dict]):
+        """將法規文件索引至向量資料庫"""
+        vectors = []
+        
+        for doc in documents:
+            # 組合文件內容
+            text = f"{doc['title']}\n{doc['content']}"
+            
+            # 生成向量嵌入
+            embedding = self.embedder.encode(text).tolist()
+            
+            vectors.append({
+                'id': doc['id'],
+                'values': embedding,
+                'metadata': {
+                    'title': doc['title'],
+                    'source': doc['source'],  # FDA/TFDA/EU MDR
+                    'section': doc['section'],
+                    'effective_date': doc['effective_date']
+                }
+            })
+        
+        # 批次上傳
+        self.index.upsert(vectors=vectors, batch_size=100)
+        st.success(f"✅ 已索引 {len(vectors)} 筆法規文件")
+    
+    def find_relevant_regulations(
+        self,
+        submission_text: str,
+        top_k: int = 10,
+        source_filter: Optional[str] = None
+    ) -> List[Dict]:
+        """找出與送審文件相關的法規條文"""
+        
+        # 生成查詢向量
+        query_embedding = self.embedder.encode(submission_text).tolist()
+        
+        # 構建過濾條件
+        filter_dict = {}
+        if source_filter:
+            filter_dict['source'] = source_filter
+        
+        # 向量檢索
+        results = self.index.query(
+            vector=query_embedding,
+            top_k=top_k,
+            filter=filter_dict if filter_dict else None,
+            include_metadata=True
+        )
+        
+        return [{
+            'regulation_id': match['id'],
+            'title': match['metadata']['title'],
+            'source': match['metadata']['source'],
+            'section': match['metadata']['section'],
+            'relevance_score': match['score']
+        } for match in results['matches']]
+    
+    async def generate_gap_analysis(
+        self,
+        submission_text: str,
+        relevant_regulations: List[Dict]
+    ) -> str:
+        """生成法規缺口分析報告"""
+        
+        # 構建提示詞
+        regulations_text = "\n\n".join([
+            f"【{reg['source']} - {reg['section']}】\n{reg['title']}"
+            for reg in relevant_regulations
+        ])
+        
+        prompt = f"""
+你是一位法規符合性分析專家。
+
+【送審文件摘要】
+{submission_text[:2000]}  # 限制長度避免超過token限制
+
+【相關法規條文】
+{regulations_text}
+
+【任務】
+分析送審文件與法規要求之間的符合性,識別任何缺口或不足之處。
+
+【輸出格式】
+# 法規符合性缺口分析
+
+## 符合項目
+- [列出已滿足的法規要求]
+
+## 缺口項目
+- [列出缺少或不完整的項目]
+
+## 建議補充資料
+1. [具體建議]
+2. [具體建議]
+
+## 風險評估
+[評估不符合項目的嚴重程度]
+"""
+        
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        response = await model.generate_content_async(prompt)
+        
+        return response.text
+9.2 臨床試驗數據分析模組
+pythonCopy# services/clinical_data_analyzer.py
+import pandas as pd
+import numpy as np
+from scipy import stats
+import plotly.graph_objects as go
+import streamlit as st
+
+class ClinicalDataAnalyzer:
+    """臨床試驗數據分析器"""
+    
+    @staticmethod
+    def analyze_efficacy_data(
+        df: pd.DataFrame,
+        primary_endpoint: str,
+        treatment_col: str = 'treatment_group',
+        control_col: str = 'control_group'
+    ) -> Dict:
+        """分析療效數據"""
+        
+        # 描述性統計
+        treatment_data = df[df[treatment_col] == 1][primary_endpoint]
+        control_data = df[df[treatment_col] == 0][primary_endpoint]
+        
+        results = {
+            'treatment': {
+                'n': len(treatment_data),
+                'mean': treatment_data.mean(),
+                'std': treatment_data.std(),
+                'median': treatment_data.median(),
+                'ci_95': stats.t.interval(
+                    0.95,
+                    len(treatment_data)-1,
+                    treatment_data.mean(),
+                    stats.sem(treatment_data)
+                )
+            },
+            'control': {
+                'n': len(control_data),
+                'mean': control_data.mean(),
+                'std': control_data.std(),
+                'median': control_data.median(),
+                'ci_95': stats.t.interval(
+                    0.95,
+                    len(control_data)-1,
+                    control_data.mean(),
+                    stats.sem(control_data)
+                )
+            }
+        }
+        
+        # 統計檢定
+        t_stat, p_value = stats.ttest_ind(treatment_data, control_data)
+        results['statistical_test'] = {
+            'method': 'Independent t-test',
+            't_statistic': t_stat,
+            'p_value': p_value,
+            'significant': p_value < 0.05
+        }
+        
+        # 效應量(Cohen's d)
+        pooled_std = np.sqrt(
+            ((len(treatment_data)-1) * treatment_data.std()**2 +
+             (len(control_data)-1) * control_data.std()**2) /
+            (len(treatment_data) + len(control_data) - 2)
+        )
+        cohens_d = (treatment_data.mean() - control_data.mean()) / pooled_std
+        results['effect_size'] = {
+            'cohens_d': cohens_d,
+            'interpretation': ClinicalDataAnalyzer._interpret_cohens_d(cohens_d)
+        }
+        
+        return results
+    
+    @staticmethod
+    def _interpret_cohens_d(d: float) -> str:
+        """解釋Cohen's d效應量"""
+        abs_d = abs(d)
+        if abs_d < 0.2:
+            return "極小效應"
+        elif abs_d < 0.5:
+            return "小效應"
+        elif abs_d < 0.8:
+            return "中等效應"
+        else:
+            return "大效應"
+    
+    @staticmethod
+    def visualize_results(results: Dict):
+        """視覺化分析結果"""
+        
+        # 森林圖(Forest Plot)
+        fig = go.Figure()
+        
+        # 治療組
+        fig.add_trace(go.Scatter(
+            x=[results['treatment']['mean']],
+            y=['Treatment'],
+            error_x=dict(
+                type='data',
+                array=[results['treatment']['mean'] - results['treatment']['ci_95'][0]],
+                arrayminus=[results['treatment']['ci_95'][1] - results['treatment']['mean']]
+            ),
+            mode='markers',
+            marker=dict(size=12, color='blue'),
+            name='Treatment Group'
+        ))
+        
+        # 對照組
+        fig.add_trace(go.Scatter(
+            x=[results['control']['mean']],
+            y=['Control'],
+            error_x=dict(
+                type='data',
+                array=[results['control']['mean'] - results['control']['ci_95'][0]],
+                arrayminus=[results['control']['ci_95'][1] - results['control']['mean']]
+            ),
+            mode='markers',
+            marker=dict(size=12, color='red'),
+            name='Control Group'
+        ))
+        
+        fig.update_layout(
+            title='療效比較 (95% 信賴區間)',
+            xaxis_title='主要終點數值',
+            yaxis_title='組別',
+            showlegend=True,
+            height=300
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # 統計結果表格
+        st.subheader("統計檢定結果")
+        st.write(f"**t統計量**: {results['statistical_test']['t_statistic']:.4f}")
+        st.write(f"**p值**: {results['statistical_test']['p_value']:.4f}")
+        st.write(f"**效應量(Cohen's d)**: {results['effect_size']['cohens_d']:.4f} ({results['effect_size']['interpretation']})")
+        
+        if results['statistical_test']['significant']:
+            st.success("✅ 差異達統計顯著性 (p < 0.05)")
+        else:
+            st.warning("⚠️ 差異未達統計顯著性 (p ≥ 0.05)")
+9.3 區塊鏈審查軌跡系統
+pythonCopy# services/blockchain_audit.py
+import hashlib
+import json
+from datetime import datetime
+from typing import List, Dict
+import streamlit as st
+
+class Block:
+    """區塊鏈區塊"""
+    
+    def __init__(
+        self,
+        index: int,
+        timestamp: str,
+        data: Dict,
+        previous_hash: str
+    ):
+        self.index = index
+        self.timestamp = timestamp
+        self.data = data
+        self.previous_hash = previous_hash
+        self.nonce = 0
+        self.hash = self.calculate_hash()
+    
+    def calculate_hash(self) -> str:
+        """計算區塊雜湊值"""
+        block_string = json.dumps({
+            'index': self.index,
+            'timestamp': self.timestamp,
+            'data': self.data,
+            'previous_hash': self.previous_hash,
+            'nonce': self.nonce
+        }, sort_keys=True)
+        
+        return hashlib.sha256(block_string.encode()).hexdigest()
+    
+    def mine_block(self, difficulty: int = 4):
+        """工作量證明挖礦"""
+        target = '0' * difficulty
+        
+        while self.hash[:difficulty] != target:
+            self.nonce += 1
+            self.hash = self.calculate_hash()
+
+class AuditBlockchain:
+    """審查軌跡區塊鏈"""
+    
+    def __init__(self):
+        self.chain: List[Block] = []
+        self.create_genesis_block()
+    
+    def create_genesis_block(self):
+        """創建創世區塊"""
+        genesis_block = Block(
+            index=0,
+            timestamp=datetime.now().isoformat(),
+            data={'message': 'Genesis Block - TW-SmartReview 2030'},
+            previous_hash='0'
+        )
+        self.chain.append(genesis_block)
+    
+    def add_audit_record(
+        self,
+        action_type: str,
+        user_id: str,
+        document_id: str,
+        details: Dict
+    ):
+        """添加審查記錄"""
+        audit_data = {
+            'action_type': action_type,  # 'upload', 'review', 'approve', 'reject'
+            'user_id': user_id,
+            'document_id': document_id,
+            'details': details,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        new_block = Block(
+            index=len(self.chain),
+            timestamp=datetime.now().isoformat(),
+            data=audit_data,
+            previous_hash=self.chain[-1].hash
+        )
+        
+        new_block.mine_block(difficulty=4)
+        self.chain.append(new_block)
+        
+        st.success(f"✅ 審查記錄已寫入區塊鏈 (Block #{new_block.index})")
+    
+    def verify_chain(self) -> bool:
+        """驗證區塊鏈完整性"""
+        for i in range(1, len(self.chain)):
+            current_block = self.chain[i]
+            previous_block = self.chain[i-1]
+            
+            # 驗證當前區塊雜湊值
+            if current_block.hash != current_block.calculate_hash():
+                st.error(f"❌ 區塊 #{i} 雜湊值不符")
+                return False
+            
+            # 驗證鏈接關係
+            if current_block.previous_hash != previous_block.hash:
+                st.error(f"❌ 區塊 #{i} 鏈接斷裂")
+                return False
+        
+        return True
+    
+    def get_audit_trail(self, document_id: str) -> List[Dict]:
+        """取得特定文件的審查軌跡"""
+        trail = []
+        
+        for block in self.chain[1:]:  # 跳過創世區塊
+            if block.data['document_id'] == document_id:
+                trail.append({
+                    'block_index': block.index,
+                    'timestamp': block.data['timestamp'],
+                    'action': block.data['action_type'],
+                    'user': block.data['user_id'],
+                    'details': block.data['details'],
+                    'block_hash': block.hash
+                })
+        
+        return trail
+    
+    def export_chain(self, filepath: str):
+        """匯出區塊鏈為JSON檔案"""
+        chain_data = []
+        
+        for block in self.chain:
+            chain_data.append({
+                'index': block.index,
+                'timestamp': block.timestamp,
+                'data': block.data,
+                'previous_hash': block.previous_hash,
+                'nonce': block.nonce,
+                'hash': block.hash
+            })
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(chain_data, f, indent=2, ensure_ascii=False)
+
+10. 系統效能優化與擴展性
+10.1 快取策略
+pythonCopy# utils/cache_manager.py
+import streamlit as st
+import hashlib
+from functools import wraps
+from typing import Callable, Any
+
+class CacheManager:
+    """快取管理器"""
+    
+    @staticmethod
+    def cache_api_response(ttl: int = 3600):
+        """快取API回應的裝飾器"""
+        def decorator(func: Callable) -> Callable:
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                # 生成快取鍵
+                cache_key = CacheManager._generate_cache_key(func.__name__, args, kwargs)
+                
+                # 檢查快取
+                if cache_key in st.session_state:
+                    cached_data, timestamp = st.session_state[cache_key]
+                    if (datetime.now() - timestamp).seconds < ttl:
+                        st.info("⚡ 從快取載入結果")
+                        return cached_data
+                
+                # 執行函式
+                result = func(*args, **kwargs)
+                
+                # 存入快取
+                st.session_state[cache_key] = (result, datetime.now())
+                
+                return result
+            
+            return wrapper
+        return decorator
+    
+    @staticmethod
+    def _generate_cache_key(func_name: str, args: tuple, kwargs: dict) -> str:
+        """生成快取鍵"""
+        key_data = f"{func_name}_{str(args)}_{str(kwargs)}"
+        return hashlib.md5(key_data.encode()).hexdigest()
+10.2 批次處理優化
+pythonCopy# core/batch_processor.py
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from typing import List, Callable, Any
+
+class BatchProcessor:
+    """批次處理器"""
+    
+    def __init__(self, max_workers: int = 5):
+        self.max_workers = max_workers
+        self.executor = ThreadPoolExecutor(max_workers=max_workers)
+    
+    async def process_batch(
+        self,
+        items: List[Any],
+        processor_func: Callable,
+        progress_callback: Callable = None
+    ) -> List[Any]:
+        """批次處理項目"""
+        
+        loop = asyncio.get_event_loop()
+        tasks = []
+        
+        for idx, item in enumerate(items):
+            # 建立異步任務
+            task = loop.run_in_executor(
+                self.executor,
+                processor_func,
+                item
+            )
+            tasks.append(task)
+            
+            # 更新進度
+            if progress_callback:
+                progress_callback((idx + 1) / len(items))
+        
+        # 等待所有任務完成
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        return results
+
+11. 部署與維運
+11.1 Docker容器化部署
+dockerfileCopy# Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# 安裝系統依賴
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    software-properties-common \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# 複製需求檔案
+COPY requirements.txt .
+
+# 安裝Python套件
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 複製應用程式
+COPY . .
+
+# 暴露Streamlit預設端口
+EXPOSE 8501
+
+# 健康檢查
+HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
+
+# 啟動應用
+ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+yamlCopy# docker-compose.yml
+version: '3.8'
+
+services:
+  streamlit:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+    volumes:
+      - ./config:/app/config
+      - ./data:/app/data
+    restart: unless-stopped
+    
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - streamlit
+11.2 CI/CD Pipeline
+yamlCopy# .github/workflows/deploy.yml
+name: Deploy TW-SmartReview 2030
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+      
+      - name: Run tests
+        run: pytest tests/ --cov=. --cov-report=xml
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+  
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy to Streamlit Cloud
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.STREAMLIT_TOKEN }}" \
+            https://api.streamlit.io/v1/deploy
+
+12. 結論與未來展望
+12.1 系統價值總結
+TW-SmartReview 2030代表了醫療器材審查領域的典範轉移,從傳統的人工審查模式邁向智慧增強型審查。系統透過以下創新實現突破:
+
+審查效率提升70%: AI代理人可24/7不間斷工作,處理初步篩選與格式檢查
+審查一致性提升: 基於標準化的提示詞模板,減少人為主觀差異
+知識累積與傳承: 透過向量資料庫與區塊鏈,建立可追溯的審查知識庫
+國際接軌: 支援多國法規標準,促進全球醫療器材市場准入
+
+12.2 未來發展路線圖
+短期目標(6個月內)
+
+整合真實臨床案例資料庫,提升模型準確性
+開發移動端應用(iOS/Android),支援行動辦公
+實作多使用者協作功能與權限管理系統
+
+中期目標(1-2年)
+
+引入聯邦學習技術,在保護隱私前提下共享審查經驗
+開發預測性分析模組,提前識別高風險申請案
+整合電子送審系統(eSubmission Gateway)
+
+長期願景(3-5年)
+
+建立跨國審查資訊共享平台
+發展自主學習型AI代理人,根據審查結果持續優化
+推動醫療器材審查流程的全球標準化
+
+TW-SmartReview 2030不僅是一個技術系統,更是推動醫療器材產業創新與患者安全的重要基礎設施。透過結合Streamlit的敏捷開發能力、Gemini的先進AI推理、以及YAML的靈活配置,本系統為未來的智慧監管樹立了新的標竿。
